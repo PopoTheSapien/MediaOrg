@@ -1,0 +1,14 @@
+
+#!/usr/bin/bash
+
+echo Installing Python-pip....
+apt-get install python-pip
+
+echo Adding module: Mechanize....
+easy_install mechanize
+
+echo Adding module BeautifulSoup....
+easy_install beautifulsoup
+
+echo Installing cron.....
+apt-get install cron
