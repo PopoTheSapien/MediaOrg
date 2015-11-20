@@ -1,0 +1,91 @@
+#!/usr/bin/bash
+
+echo Updating......
+apt-get update && apt-get upgrade
+
+echo Installing rsync....
+apt-get install rsync
+
+# TMUX
+echo Installing Tmux....
+apt-get install tmux
+
+echo Installing Deluge deamon....
+apt-get install deluged
+
+echo Installing Deluge web.....
+apt-get install deluge-web
+
+# DELUGE
+echo Creating service startup: DELUGED....
+
+cd /etc/systemd/system
+sleep 1
+touch deluged.service
+
+#----------------------------------------
+echo "[Unit]
+Description=Deluge Bittorrent Client Daemon
+After=network-online.target
+
+[Service]
+Type=simple
+User=osmc
+Group=osmc
+UMask=007
+
+ExecStart=/usr/bin/deluged -d
+
+Restart=on-failure
+
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target" > deluged.service
+#----------------------------------------
+
+# DELUGE-WEB
+echo Creating  service startup: DELUGE-WEB.....
+sleep 1
+touch deluge-web.service
+
+#----------------------------------------
+echo "[Unit]
+Description=Deluge Bittorrent Client Web Interface
+After=network-online.target
+
+[Service]
+Type=simple
+User=osmc
+Group=osmc
+UMask=027
+
+ExecStart=/usr/bin/deluge-web
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target" > deluge-web.service
+#----------------------------------------
+
+
+# ENABLE SERVICES
+sleep 1
+echo Enabling Services .....
+systemctl enable deluged
+systemctl enable deluge-web
+
+# SAMBA
+echo Installing Samba .... 
+apt-get install samba
+
+echo Setting up samba...
+smbpasswd -a osmc
+echo ----------------------------------------
+echo       user = osmc  
+echo       pass = whatever you typed in
+echo ----------------------------------------
+
+echo Enabling max current on USB port ...
+echo max_usb_current=1 >> /boot/config.txt
+
