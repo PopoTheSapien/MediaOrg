@@ -48,6 +48,9 @@ exclusions = ('sample', '._')
 # What types of media to look for
 mediatypes = ('mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
 
+# What should be removed from the file name
+crapdict = ('webrip', 'bluray', 'divx')
+
 # =================================================================================================================
 # Paths and Dirs
 # =================================================================================================================
@@ -146,7 +149,7 @@ def what_os():
 # Check if it is a movie!
 # =================================================================================================================
 
-# Credit to this guy for imdb scraping:
+# Credit to this guy for web scraping:
 # Author : Jay Rambhia
 # email  : jayrambhia777@gmail.com
 # Git    : https://github.com/jayrambhia
@@ -204,19 +207,19 @@ def movieyn(title):
         res = br.follow_link(link)
 
         soup = BeautifulSoup(res.read())
- 
+
         movie_title = getunicode(soup.find('title'))
         movie_title = movie_title.replace(' - IMDb', '')
 
         if debug:
             rate = soup.find('span', itemprop='ratingValue')
             rating = getunicode(rate)
-    
+
             actors = []
             actors_soup = soup.findAll('a', itemprop='actors')
             for i in range(len(actors_soup)):
                 actors.append(getunicode(actors_soup[i]))
-    
+
             des = soup.find('meta', {'name': 'description'})['content']
 
             genre = []
@@ -277,6 +280,20 @@ def sniffer(path, typesearch, exclude):
 
     return[returnlist]
 
+
+# =================================================================================================================
+# Strips all the crap out of a filename
+# =================================================================================================================
+
+
+def stripcrap(stringin):
+
+    stringout = stringin
+    for word in crapdict:
+        stringout = stringout.replace(word, '',-1)
+
+    return stringout
+
 # =================================================================================================================
 # Creates the directory passed to it.
 # =================================================================================================================
@@ -306,7 +323,7 @@ def directorycreator(path):
 
 # =================================================================================================================
 # Get all the components that make up the file name
-# 
+#
 # Takes the full path /blabla/bla/MovieorSerie.XXXX.Crap  and gets:
 #
 # Name of file            : Movie/Serie
@@ -354,17 +371,19 @@ def filedetail(fullpath):
     if bufffirstpart.lower().endswith('.s'):
         bufffirstpart = bufffirstpart[:-2]
         truncated = True
-    
+
     if not truncated:
         bufffirstpart = bufffirstpart[:bufffirstpart.rfind('.')]
-    
+
     bufffirstpart = bufffirstpart.title().replace('.', ' ').strip(' ')
 
     if verbose:
-        printcolour('Processing: ' + filename, 'cy') 
+        printcolour('---------------------------------------------', 'cy')
+        printcolour('Processing: ' + filename, 'cy')
 
     # Send it to movieyn
-    result = movieyn(bufffirstpart.lower().replace('dvdrip', ''))
+    propername = stripcrap(bufffirstpart.lower())
+    result = movieyn(propername + ' (' + buffsecondpart + ')')
 
     if debug:
         printcolour('(filedetail) - ' + bufffirstpart, 'y')
@@ -375,7 +394,7 @@ def filedetail(fullpath):
         return['movie', filename, result, ' ']
 
     elif result == '-':       # SERIE
-        
+
         # Format the secondpart  ------------------------------------
 
         buffsecondpart.replace('.', ' ')
@@ -387,8 +406,9 @@ def filedetail(fullpath):
         else:
             # If there are not at least 2 digits, raise error.
             printcolour('ERROR:  There is an error with ' + filename, 'r')
-            bufffirstpart = "--- Manual Sort ---"
-            buffsecondpart = '00'
+            #bufffirstpart = "--- Manual Sort ---"
+            #buffsecondpart = '00'
+            return['error', filename, bufffirstpart, buffsecondpart]
 
         if (buffsecondpart.__len__() < 0) or (bufffirstpart.__len__() < 0):
             printcolour('ERROR:  Series: ' + bufffirstpart + ' -  Season: ' + buffsecondpart, 'r')
@@ -403,19 +423,37 @@ def filedetail(fullpath):
 
 def copandlog(source, destination, action):
 
-    if action == 'cl':
-
-        if verbose:
-            printcolour('-----------------------------', 'g')
-            printcolour('File  : ' + source + '\n', 'g')
-            printcolour('To    : ' + destination, 'g')
-            printcolour('------------------------------', 'g')
-        shutil.copy(source, destination)
     file = open(logfile, 'a')
-    datetimenow = datetime.datetime.now() 
-    print >> file, '\r\n' + datetimenow.ctime()
-    print >> file, '\r\nFrom: ' + source 
-    print >> file, '\r\nTo: ' + destination
+    datetimenow = datetime.datetime.now()
+
+    if action == 'msg':
+        if verbose:
+            #printcolour('-----------------------------', 'g')
+            printcolour('File  : ' + source + ' requires renaming before it can be processed accurately\n', 'g')
+            #printcolour('------------------------------', 'g')
+
+        print >> file, '\r\n -------------------------------\n'
+        print >> file, '\r\n' + datetimenow.ctime()
+        print >> file, source + ' requires renaming before it can be processed accurately\n'
+
+    if action == 'cl':
+        if verbose:
+            #printcolour('-----------------------------', 'g')
+            printcolour('File  : ' + source, 'g')
+            printcolour('To    : ' + destination, 'g')
+            #printcolour('------------------------------', 'g')
+        shutil.copy(source, destination)
+
+        print >> file, '\r\n -------------------------------'
+        print >> file, '\r\n' + datetimenow.ctime()
+        print >> file, '\r\nFrom: ' + source
+        print >> file, '\r\nTo: ' + destination
+
+    if action == 'l':
+        print >> file, '\r\n -------------------------------'
+        print >> file, '\r\n' + datetimenow.ctime()
+        print >> file, '\r\nFrom: ' + source
+        print >> file, '\r\nTo: ' + destination
 
     file.close()
 
@@ -425,10 +463,10 @@ def copandlog(source, destination, action):
 
 
 def dontdoagain(logfilein, searchterm):
-    
-    searchfile = open(logfilein, 'a+') 
+
+    searchfile = open(logfilein, 'a+')
     for line in searchfile:
-        if searchterm in line: 
+        if searchterm in line:
             return 'f'
     searchfile.close()
     return 'nf'
@@ -464,6 +502,55 @@ def sanity_check():
         printcolour('ERROR: Not all drives specified are available!', 'r')
         sys.exit()
 
+# ======================================================================================================================
+# Procedure for dealing with series.
+# ======================================================================================================================
+
+
+def seriecopy():
+
+    DDrive = ''
+
+    File_Name = FileInfo[1]
+    SSName = FileInfo[2]
+    SSSeason = FileInfo[3]
+
+    for dirs in DestTree:
+
+        i = dirs.lower().find(SSName.lower())
+
+        if i > 0:
+            DDrive = dirs[:i]
+            break
+
+    if DDrive == '':
+
+        if directorycreator(os.path.join(defaultdest, SSName.title(), 'Season ' + SSSeason)):
+            DDrive = defaultdest
+
+    fullpath = os.path.join(DDrive, SSName.title(), 'Season ' + SSSeason)
+    directorycreator(fullpath)
+
+    if not(os.path.isfile(os.path.join(fullpath, File_Name))):
+        copandlog(entry, fullpath, 'cl')
+    else:
+        copandlog(entry, fullpath, 'l')
+
+# ======================================================================================================================
+# Procedure for dealing with series.
+# ======================================================================================================================
+
+
+def moviecopy():
+
+    MovieName = FileInfo[2]
+
+    Folder = MovieName.replace(':', ' -')
+    fullpath = os.path.join(moviedirectory[0], Folder)
+    if directorycreator(fullpath):
+        copandlog(entry, fullpath, 'cl')
+    else:
+        copandlog(entry, fullpath, 'l')
 
 # ======================================================================================================================
 # MAIN
@@ -472,17 +559,16 @@ def sanity_check():
 # Do a sanity check ........
 sanity_check()
 
-
+foldername = ''
 DestTree = []
 SSName = ''
 SSSeason = ''
-DDrive = ''
 
 what_os()
 
 if verbose:
     printcolour('------------------------------------------------------------------------------------------------------', 'g')
-    printcolour('Source Directory: ' + sourcedirectory + '\n -- Valid: ' + str(os.path.exists(sourcedirectory)), 'g') 
+    printcolour('Source Directory: ' + sourcedirectory + '\n -- Valid: ' + str(os.path.exists(sourcedirectory)), 'g')
     print(' ')
     printcolour('Serie Destination Directory 1 (Default): ' + seriedest1 + '\n -- Valid: ' + str(os.path.exists(destinationdirectory[0])), 'g')
     print(' ')
@@ -499,21 +585,18 @@ if verbose:
 FileList = sniffer(sourcedirectory, mediatypes, exclusions)
 # ''''
 # Get all the files to sort.
-for dirs in destinationdirectory: 
+for dirs in destinationdirectory:
     try:
         for path, subdirs, files in os.walk(dirs):
             DestTree.append(path)
     except:
             printcolour('ERROR: main - ' + destinationdirectory + ' Error Occurred!', 'r')
 
-
 for entry in FileList[0]:
 
     # Do a sanity check ........
-    sanity_check()   
+    sanity_check()
 
-    DDrive = ''    
-    
     if debug == 1:
         printcolour('(main) Current Item: ' + entry, 'y')
 
@@ -522,43 +605,41 @@ for entry in FileList[0]:
 
         # Check if it is a movie/serie
         FileInfo = filedetail(entry)
+
         if verbose:
             printcolour('(main) File Info: ' + FileInfo[0] + ' ' + FileInfo[1] + ' ' + FileInfo[2] + ' ' + FileInfo[3], 'y')
-    
+
+        # If the file is serie
         if FileInfo[0] == 'serie':
-         
-            File_Name = FileInfo[1]
-            SSName = FileInfo[2]
-            SSSeason = FileInfo[3]
 
-            for dirs in DestTree:
+            seriecopy()
 
-                i = dirs.lower().find(SSName.lower())
-
-                if i > 0:
-                    DDrive = dirs[:i]
-                    break
-
-            if DDrive == '':
-
-                if directorycreator(os.path.join(defaultdest, SSName.title(), 'Season ' + SSSeason)):
-                    DDrive = defaultdest
-
-            fullpath = os.path.join(DDrive, SSName.title(), 'Season ' + SSSeason)
-            directorycreator(fullpath)
-
-            if not(os.path.isfile(os.path.join(fullpath, File_Name))):
-                copandlog(entry, fullpath, 'cl')
-            else:
-                copandlog(entry, fullpath, 'l')
-
+        # If the file is movie
         elif FileInfo[0] == 'movie':
-            MovieName = FileInfo[2]
-        
-            Folder = MovieName.replace(':', ' -')
-            fullpath = os.path.join(moviedirectory[0], Folder)      
-            if directorycreator(fullpath):
-                copandlog(entry, fullpath, 'cl')
-            else:
-                copandlog(entry, fullpath, 'l')
+
+            moviecopy()
+
+        # If the file is unknown, try and probe the folder for a valid name.
+        elif FileInfo[0] == 'error':
+
+            # Get the parent folder name
+            foldername = entry[:entry.rfind(os.sep)]
+
+            if verbose:
+                printcolour('Cannot determine serie or movie from file name.  Trying parent folder: ' + foldername, 'y')
+
+            FileInfo = filedetail(foldername + '.ext')
+
+            # If the file is serie
+            if FileInfo[0] == 'serie':
+                seriecopy()
+
+            # If the file is movie
+            elif FileInfo[0] == 'movie':
+                moviecopy()
+
+            # If it still cant find some info, log and continue
+            elif FileInfo[0] == 'error':
+                copandlog(entry, 'none', 'msg')
+                continue
 # '''''
