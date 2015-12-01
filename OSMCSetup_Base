@@ -10,6 +10,9 @@ apt-get install rsync
 echo Installing Tmux....
 apt-get install tmux
 
+echo Installing UnRar.....
+apt-get install unrar
+
 echo Installing Deluge deamon....
 apt-get install deluged
 
