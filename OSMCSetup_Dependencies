@@ -7,6 +7,9 @@ apt-get install python-pip
 echo Adding module: Mechanize....
 easy_install mechanize
 
+echo Installing unrar.....
+easy_install unrar
+
 echo Adding module BeautifulSoup....
 easy_install beautifulsoup
 
