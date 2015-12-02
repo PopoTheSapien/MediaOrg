@@ -13,7 +13,6 @@
 #          Great to use with osmc for the ultimate solution.
 #
 #          Missing functionality:
-#          - unrar items
 #          - general efficiency
 #          - improve diagnostics - check if copy is successful based on size comparison (power failure)
 
@@ -29,6 +28,9 @@ from mechanize import Browser
 import re
 import datetime
 import socket
+import patoolib
+import pwd
+import grp
 
 # =================================================================================================================
 # Constants
@@ -38,6 +40,8 @@ verbose = True
 debug = ''
 # maxseriesize = 9000000000
 REMOTE_SERVER = "www.google.com"
+USERNAME = 'osmc'
+GROUP = 'osmc'
 
 # Video types to scan for
 mediatypes = ('mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
@@ -211,6 +215,12 @@ def movieyn(title):
         movie_title = getunicode(soup.find('title'))
         movie_title = movie_title.replace(' - IMDb', '')
 
+        # Look for 'TV Episode' in the soup
+        if (soup.find('meta', {'property': 'og:title'})['content']).find('TV Episode') > -1:
+            if verbose:
+                printcolour('(movieyn) ' + movie + ' detected as series...', 'cy')
+            return '-'
+
         if debug:
             rate = soup.find('span', itemprop='ratingValue')
             rating = getunicode(rate)
@@ -246,8 +256,9 @@ def movieyn(title):
 
     except:
         if verbose:
-            printcolour('(movieyn) ' + movie + ' not found! Must be a series??', 'c')
+            printcolour('(movieyn) ' + movie + ' not found! Must be a series??', 'cy')
         return '-'
+
 
 # =================================================================================================================
 # Returns a list of all files in the given path based on criteria such as .extension and size
@@ -455,6 +466,19 @@ def copandlog(source, destination, action):
         print >> file, '\r\nFrom: ' + source
         print >> file, '\r\nTo: ' + destination
 
+    if action == 'el':
+
+        if verbose:
+            #printcolour('-----------------------------', 'g')
+            printcolour('Rarfile         : ' + source, 'g')
+            printcolour('Extracted To    : ' + destination, 'g')
+            #printcolour('------------------------------', 'g')
+
+        print >> file, '\r\n -------------------------------'
+        print >> file, '\r\n' + datetimenow.ctime()
+        print >> file, '\r\nRar File: ' + source
+        print >> file, '\r\nExtracted To: ' + destination
+
     file.close()
 
 # ======================================================================================================================
@@ -503,6 +527,20 @@ def sanity_check():
         sys.exit()
 
 # ======================================================================================================================
+# Change ownership and group
+# ======================================================================================================================
+
+
+def pinkslip(filename):
+    #try:
+        uid = pwd.getpwnam(USERNAME).pw_uid
+        gid = grp.getgrnam(USERNAME).gr_gid
+        os.chown(filename, uid, gid)
+        #return('1')
+    #except:
+        #return('0')
+
+# ======================================================================================================================
 # Procedure for dealing with series.
 # ======================================================================================================================
 
@@ -533,6 +571,7 @@ def seriecopy():
 
     if not(os.path.isfile(os.path.join(fullpath, File_Name))):
         copandlog(entry, fullpath, 'cl')
+        pinkslip(fullpath + entry[entry.rfind(os.sep):])
     else:
         copandlog(entry, fullpath, 'l')
 
@@ -549,6 +588,7 @@ def moviecopy():
     fullpath = os.path.join(moviedirectory[0], Folder)
     if directorycreator(fullpath):
         copandlog(entry, fullpath, 'cl')
+        pinkslip(fullpath + entry[entry.rfind(os.sep):])
     else:
         copandlog(entry, fullpath, 'l')
 
@@ -580,10 +620,28 @@ if verbose:
     printcolour('------------------------------------------------------------------------------------------------------', 'g')
 
 
-# Determine if it is a movie or series
+# ----------------------------------------------------------------------------------------------------------------------
+# Deal with all the rar files first
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Get the list of Rar files...
+RarList = sniffer(sourcedirectory, 'rar', '')
+
+for rarfile in RarList[0]:
+
+    # Check if we hav already unzipped it...
+    if dontdoagain(logfile, rarfile) == 'nf':
+        outputdir = rarfile[:rarfile.rfind(os.sep)]
+        patoolib.extract_archive(rarfile, outdir=outputdir)
+        copandlog(rarfile, outputdir, 'el')
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Sorting carousel yay!
+# ----------------------------------------------------------------------------------------------------------------------
+
 # Get all the files that match the criteria
 FileList = sniffer(sourcedirectory, mediatypes, exclusions)
-# ''''
+
 # Get all the files to sort.
 for dirs in destinationdirectory:
     try:
