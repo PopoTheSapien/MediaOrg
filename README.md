@@ -1,4 +1,6 @@
-MediaOrg
+#MediaOrg
+
+This program is designed to monitor competed downloaded 
 
 This is my attempt to sort out media (movies and series) once they have completed downloading
 by moving them intelligently to predefined directories based on their type.
