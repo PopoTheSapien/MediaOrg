@@ -629,8 +629,8 @@ for rarfile in RarList[0]:
     # Check if we hav already unzipped it...
     outputdir = rarfile[:rarfile.rfind(os.sep)]
     if dontdoagain(logfile, outputdir) == 'nf':
-        patoolib.extract_archive(rarfile, outdir=outputdir)
         copandlog(rarfile, outputdir, 'el')
+        patoolib.extract_archive(rarfile, outdir=outputdir)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Sorting carousel yay!
