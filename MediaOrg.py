@@ -44,7 +44,7 @@ USERNAME = 'osmc'
 GROUP = 'osmc'
 
 # Video types to scan for
-mediatypes = ('mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
+mediatypes = ('.mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
 
 # Exclude files with the following in their name:
 exclusions = ('sample', '._')
@@ -57,14 +57,14 @@ crapdict = ('webrip', 'bluray', 'divx')
 # =================================================================================================================
 
 # Where the Unsorted stuff is kept
-sourcedirectory = os.sep + os.path.join('home','osmc','WorkingDir','Done')
+sourcedirectory = os.sep + os.path.join('media', '00_Media', '02_WorkDir', '01_Done')
 
 # Where Series are kept
-seriedest1 = os.sep + os.path.join('home','osmc','WorkingDir','Series')
+seriedest1 = os.sep + os.path.join('media', '00_Media', '00_Series')
 seriedest2 = os.path.join('')
 
 # Where Movies are kept
-moviedest1 = os.sep + os.path.join('home','osmc','WorkingDir','Movies')
+moviedest1 = os.sep + os.path.join('media', '01_Media', '00_Movies')
 moviedest2 = os.path.join('')
 
 destinationdirectory = (seriedest1, seriedest2)
@@ -74,7 +74,7 @@ moviedirectory = (moviedest1, moviedest2)
 defaultdest = destinationdirectory[0]
 
 # Log file path
-logfile = os.sep + os.path.join('home','osmc','WorkingDir','MediaOrg_Log.txt')
+logfile = os.sep + os.path.join('home', 'osmc', 'Scripts', 'MediaOrg_Log.txt')
 
 # =================================================================================================================
 # Check that all drives specified are available
@@ -622,13 +622,13 @@ if verbose:
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Get the list of Rar files...
-RarList = sniffer(sourcedirectory, 'rar', '')
+RarList = sniffer(sourcedirectory, '.rar', '')
 
 for rarfile in RarList[0]:
 
     # Check if we hav already unzipped it...
-    if dontdoagain(logfile, rarfile) == 'nf':
-        outputdir = rarfile[:rarfile.rfind(os.sep)]
+    outputdir = rarfile[:rarfile.rfind(os.sep)]
+    if dontdoagain(logfile, outputdir) == 'nf':
         patoolib.extract_archive(rarfile, outdir=outputdir)
         copandlog(rarfile, outputdir, 'el')
 
