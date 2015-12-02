@@ -49,9 +49,6 @@ mediatypes = ('mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
 # Exclude files with the following in their name:
 exclusions = ('sample', '._')
 
-# What types of media to look for
-mediatypes = ('mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
-
 # What should be removed from the file name
 crapdict = ('webrip', 'bluray', 'divx')
 
