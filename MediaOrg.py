@@ -217,6 +217,11 @@ def movieyn(title):
             if verbose:
                 printcolour('(movieyn) ' + movie + ' detected as series...', 'cy')
             return '-'
+        # Look for 'TV Episode' in the soup
+        if (soup.find('meta', {'property': 'og:type'})['content']).find('tv_show') > -1:
+            if verbose:
+                printcolour('(movieyn) ' + movie + ' detected as series...', 'cy')
+            return '-'
 
         if debug:
             rate = soup.find('span', itemprop='ratingValue')
