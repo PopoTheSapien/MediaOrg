@@ -1,6 +1,14 @@
 #MediaOrg
 
-This program is designed to monitor competed downloaded 
+This program is designed to monitor completed downloads
+- Movies
+- Series
+
+##Process Overview
+
+Source path scanned for rar files
+
+from there, each file is inspected, and using an inet search, and then based
 
 This is my attempt to sort out media (movies and series) once they have completed downloading
 by moving them intelligently to predefined directories based on their type.
