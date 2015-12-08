@@ -612,8 +612,7 @@ def logsummary(item_extracted, item_serie, item_movie, item_error):
     while len(item_extracted) > 0:
         print >> file, '\r\n->' + (item_extracted.pop())
 
-    print >> file, '\r\nSeries'
-    print(item_serie)
+    print >> file, '\r\nSerie'
     while len(item_serie) > 0:
         print >> file, '\r\n->' + (item_serie.pop())
 
