@@ -33,26 +33,6 @@ import pwd
 import grp
 
 # =================================================================================================================
-# Constants
-# =================================================================================================================
-
-verbose = True
-debug = ''
-# maxseriesize = 9000000000
-REMOTE_SERVER = "www.google.com"
-USERNAME = 'osmc'
-GROUP = 'osmc'
-
-# Video types to scan for
-mediatypes = ('.mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
-
-# Exclude files with the following in their name:
-exclusions = ('sample', '._')
-
-# What should be removed from the file name
-crapdict = ('webrip', 'bluray', 'divx')
-
-# =================================================================================================================
 # Paths and Dirs
 # =================================================================================================================
 
@@ -75,6 +55,31 @@ defaultdest = destinationdirectory[0]
 
 # Log file path
 logfile = os.sep + os.path.join('home', 'osmc', 'Scripts', 'MediaOrg_Log.txt')
+
+# Summary file path
+summaryfile = os.sep + os.path.join('home', 'osmc', 'Scripts', 'MediaOrg_Summary.txt')
+
+
+# =================================================================================================================
+# Constants
+# =================================================================================================================
+
+verbose = True
+debug = ''
+# maxseriesize = 9000000000
+REMOTE_SERVER = "www.google.com"
+USERNAME = 'osmc'
+GROUP = 'osmc'
+
+# Video types to scan for
+mediatypes = ('.mp4', '.avi', '.mkv', '.wmv', '.mpeg', '.mpg')
+
+# Exclude files with the following in their name:
+exclusions = ('sample', '._')
+
+# What should be removed from the file name
+crapdict = ('webrip', 'bluray', 'divx')
+
 
 # =================================================================================================================
 # Check that all drives specified are available
@@ -214,11 +219,6 @@ def movieyn(title):
 
         # Look for 'TV Episode' in the soup
         if (soup.find('meta', {'property': 'og:title'})['content']).find('TV Episode') > -1:
-            if verbose:
-                printcolour('(movieyn) ' + movie + ' detected as series...', 'cy')
-            return '-'
-        # Look for 'TV Episode' in the soup
-        if (soup.find('meta', {'property': 'og:type'})['content']).find('tv_show') > -1:
             if verbose:
                 printcolour('(movieyn) ' + movie + ' detected as series...', 'cy')
             return '-'
@@ -448,6 +448,7 @@ def copandlog(source, destination, action):
         print >> file, '\r\n -------------------------------\n'
         print >> file, '\r\n' + datetimenow.ctime()
         print >> file, source + ' requires renaming before it can be processed accurately\n'
+        erroritems.append(source)
 
     if action == 'cl':
         if verbose:
@@ -534,13 +535,11 @@ def sanity_check():
 
 
 def pinkslip(filename):
-    #try:
-        uid = pwd.getpwnam(USERNAME).pw_uid
-        gid = grp.getgrnam(USERNAME).gr_gid
-        os.chown(filename, uid, gid)
-        #return('1')
-    #except:
-        #return('0')
+
+    uid = pwd.getpwnam(USERNAME).pw_uid
+    gid = grp.getgrnam(USERNAME).gr_gid
+    os.chown(filename, uid, gid)
+
 
 # ======================================================================================================================
 # Procedure for dealing with series.
@@ -570,15 +569,16 @@ def seriecopy():
 
     fullpath = os.path.join(DDrive, SSName.title(), 'Season ' + SSSeason)
     directorycreator(fullpath)
-
+    serieitems.append(File_Name)
     if not(os.path.isfile(os.path.join(fullpath, File_Name))):
         copandlog(entry, fullpath, 'cl')
+        serieitems.append(File_Name)
         pinkslip(fullpath + entry[entry.rfind(os.sep):])
     else:
         copandlog(entry, fullpath, 'l')
 
 # ======================================================================================================================
-# Procedure for dealing with series.
+# Procedure for dealing with movies.
 # ======================================================================================================================
 
 
@@ -590,21 +590,62 @@ def moviecopy():
     fullpath = os.path.join(moviedirectory[0], Folder)
     if directorycreator(fullpath):
         copandlog(entry, fullpath, 'cl')
+        movieitems.append(MovieName)
         pinkslip(fullpath + entry[entry.rfind(os.sep):])
     else:
         copandlog(entry, fullpath, 'l')
+
+
+# ======================================================================================================================
+# Summary log
+# ======================================================================================================================
+
+
+def logsummary(item_extracted, item_serie, item_movie, item_error):
+
+    file = open(summaryfile, 'a')
+    datetimenow = datetime.datetime.now()
+
+    print >> file, '\r\n-------------------------------------------------\r\n' + datetimenow.ctime()
+
+    print >> file, '\r\nExtracted'
+    while len(item_extracted) > 0:
+        print >> file, '\r\n->' + (item_extracted.pop())
+
+    print >> file, '\r\nSeries'
+    print(item_serie)
+    while len(item_serie) > 0:
+        print >> file, '\r\n->' + (item_serie.pop())
+
+    print >> file, '\r\nMovies'
+    while len(item_movie) > 0:
+        print >> file, '\r\n->' + (item_movie.pop())
+
+    print >> file, '\r\nErrors'
+    while len(item_error) > 0:
+        print >> file, '\r\n->' + (item_error.pop())
+
+    file.close()
 
 # ======================================================================================================================
 # MAIN
 # ======================================================================================================================
 
-# Do a sanity check ........
-sanity_check()
+# Initialize variables
 
 foldername = ''
 DestTree = []
 SSName = ''
 SSSeason = ''
+extracteditems = []
+serieitems = []
+movieitems = []
+erroritems = []
+
+
+# Do a sanity check ........
+sanity_check()
+
 
 what_os()
 
@@ -634,8 +675,9 @@ for rarfile in RarList[0]:
     # Check if we hav already unzipped it...
     outputdir = rarfile[:rarfile.rfind(os.sep)]
     if dontdoagain(logfile, outputdir) == 'nf':
-        copandlog(rarfile, outputdir, 'el')
         patoolib.extract_archive(rarfile, outdir=outputdir)
+        extracteditems.append(rarfile)
+        copandlog(rarfile, outputdir, 'el')
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Sorting carousel yay!
@@ -702,4 +744,7 @@ for entry in FileList[0]:
             elif FileInfo[0] == 'error':
                 copandlog(entry, 'none', 'msg')
                 continue
+
+if len(extracteditems) > 0 or len(serieitems) > 0 or len(movieitems) > 0 or len(erroritems) > 0:
+    logsummary(extracteditems, serieitems, movieitems, erroritems)
 # '''''
