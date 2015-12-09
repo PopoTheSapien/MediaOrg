@@ -31,13 +31,16 @@ Ideally, this is used in conjunction with Cron so that the sorting can happen au
 
 1. Execute the following:
 '''
-sudo sh OSMCSetup_Base.sh
-sudo sh OSMCSetup_Dependencies
+sudo sh OSMCSetup_Base.sh && sudo sh OSMCSetup_Dependencies
 '''
 
 2. Edit MediaOrg.py 'Paths and Dirs'
 3. Edit crontab:
-'''sudo crontab -e '''
+'''
+sudo crontab -e 
+'''
 For media or to run every hour, add this to the end:
-'''59 * * * * python /*path to script*/MediaOrg.py'''
+''' 
+59 * * * * python /*path to script*/MediaOrg.py
+'''
 
