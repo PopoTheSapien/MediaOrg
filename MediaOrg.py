@@ -572,7 +572,6 @@ def seriecopy():
     serieitems.append(File_Name)
     if not(os.path.isfile(os.path.join(fullpath, File_Name))):
         copandlog(entry, fullpath, 'cl')
-        serieitems.append(File_Name)
         pinkslip(fullpath + entry[entry.rfind(os.sep):])
     else:
         copandlog(entry, fullpath, 'l')
