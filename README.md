@@ -29,19 +29,19 @@ Ideally, this is used in conjunction with Cron so that the sorting can happen au
 
 ##Installation Process
 
-1. Execute the following:
+I. Execute the following:
 
 >sudo sh OSMCSetup_Base.sh && sudo sh OSMCSetup_Dependencies
 
-2. Edit MediaOrg.py 'Paths and Dirs'
+II. Edit MediaOrg.py 'Paths and Dirs'
 
 >nano /*path to script*/MediaOrg.py
 
-3. Edit crontab:
+III. Edit crontab:
 
 >sudo crontab -e 
 
-4. For media or to run every hour, add this to the end:
+IV. For media or to run every hour, add this to the end:
 
 >59 * * * * python *path to script*/MediaOrg.py
 
