@@ -15,6 +15,7 @@
 #          Missing functionality:
 #          - general efficiency
 #          - improve diagnostics - check if copy is successful based on size comparison (power failure)
+#          - If a file's size exceeds remaining capacity, seize copying !!IMPORtANT!!
 
 
 
